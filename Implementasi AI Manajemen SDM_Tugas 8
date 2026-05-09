@@ -1,0 +1,360 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5b203dda-71e1-4769-b976-b8eaa13bfcd5",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1CucebVUXgBezKURcPZ0n8zy37INOJUUOq6W72DSyzlM",
+          "mode": "list",
+          "cachedResultName": "Dummy Survey Kepuasan pelanggan part2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CucebVUXgBezKURcPZ0n8zy37INOJUUOq6W72DSyzlM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CucebVUXgBezKURcPZ0n8zy37INOJUUOq6W72DSyzlM/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "a8779bd4-7d11-4948-9546-2c0c59ef8cb2",
+      "name": "Mengambil Hasil Survey",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "1i4CpejrRiWAa25G",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of items) {\n  const feedbackText = item.json.feedback;\n\n  item.json.ai_prompt = `\nYou are a Senior HR Specialist.\n\nAnalyze the following employee feedback in Indonesian.\n\nIMPORTANT:\n- Return ONLY valid JSON\n- Do not add explanations\n- Do not use markdown\n- Do not use \\`\\`\\`json\n- sentiment must be POSITIVE, NEUTRAL, or NEGATIVE\n- action_plan maximum 5 words\n\nOutput format:\n{\n  \"sentiment\": \"POSITIVE\",\n  \"category\": \"Management\",\n  \"action_plan\": \"Improve communication\"\n}\n\nFeedback:\n\"${feedbackText}\"\n`;\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "6716532a-28a7-4329-8a55-341560bedfed",
+      "name": "Menyiapkan prompt"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        624,
+        0
+      ],
+      "id": "3fb20aed-740c-4f43-8af5-1a02bdb1e268",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the following employee feedback in Indonesian.\n\nYou are a Senior HR Specialist.\n\nReturn ONLY valid JSON.\nDo not add explanations.\nDo not use markdown.\nDo not use ```json.\n\nFormat:\n{\n  \"sentiment\": \"POSITIVE | NEUTRAL | NEGATIVE\",\n  \"category\": \"Facilities | Management | Salary | Workload | Training\",\n  \"action_plan\": \"max 5 words\"\n}\n\nFeedback:\n{{ $('Loop Over Items').item.json.feedback }}",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        896,
+        16
+      ],
+      "id": "06e24b52-ff9a-4ac5-afe2-78761a6d5e1c",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1CucebVUXgBezKURcPZ0n8zy37INOJUUOq6W72DSyzlM",
+          "mode": "list",
+          "cachedResultName": "Dummy Survey Kepuasan pelanggan part2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CucebVUXgBezKURcPZ0n8zy37INOJUUOq6W72DSyzlM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CucebVUXgBezKURcPZ0n8zy37INOJUUOq6W72DSyzlM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "employee_id": "={{ $('Loop Over Items').item.json.employee_id }}",
+            "sentiment": "={{ $json.output.sentiment }}",
+            "category": "={{ $json.output.category }}",
+            "action_plan": "={{ $json.output.action_plan }}",
+            "feedback": "={{ $('Mengambil Hasil Survey').item.json.feedback }}",
+            "nama": "={{ $('Mengambil Hasil Survey').item.json.nama }}"
+          },
+          "matchingColumns": [
+            "employee_id"
+          ],
+          "schema": [
+            {
+              "id": "employee_id",
+              "displayName": "employee_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "nama",
+              "displayName": "nama",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "feedback",
+              "displayName": "feedback",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sentiment",
+              "displayName": "sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "action_plan",
+              "displayName": "action_plan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1440,
+        16
+      ],
+      "id": "9af7a85d-0c68-4082-8580-1f35add04904",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "1i4CpejrRiWAa25G",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"sentiment\": \"POSITIVE\",\n  \"category\": \"Management\",\n  \"action_plan\": \"Improve communication\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1024,
+        192
+      ],
+      "id": "adf7fc89-a1f0-4e3a-85af-5cdc148fa72f",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        896,
+        208
+      ],
+      "id": "428100a8-3d2f-4716-8835-4b07e081e76e",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Lk7OcNFAfM9yNJhc",
+          "name": "mark lee"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1216,
+        16
+      ],
+      "id": "bef3a8ba-c6a4-4db0-97a0-ad3965654854",
+      "name": "Wait",
+      "webhookId": "f5184160-ecbb-4030-b98c-0dcb21fbbbe9"
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Mengambil Hasil Survey",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mengambil Hasil Survey": {
+      "main": [
+        [
+          {
+            "node": "Menyiapkan prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Menyiapkan prompt": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f9c216ef2c5ce3632c1ddcbc770aee702ab0e63a38eea8ec506f2d08fc35dd05"
+  }
+}
